@@ -8,7 +8,7 @@ import {CSVLink} from 'react-csv';
 class App extends Component {
   constructor() {
     super();
-    this.state = {file: null, taggingData: []};
+    this.state = {file: null, taggingData: [["S3 Key", "tag", "probability"]], tagging: false};
   }
 
   render() {
@@ -25,15 +25,16 @@ class App extends Component {
           onError={this.handleFileError.bind(this)}
         />
         <br/>
-        <button disabled={this.state.file == null} onClick={this.handleTagImages.bind(this)}>Tag Images</button>
-        <br/>
-        <br/>
-        <p>{"Tagged " + this.state.taggingData.length + " Images"}</p>
-        <CSVLink data={this.state.taggingData}>Download me</CSVLink>
+        <button disabled={this.state.file == null || this.state.tagging} onClick={this.handleTagImages.bind(this)}>Tag Images</button>
+        <p style={{marginTop: "30px"}}>{"Tagged " + (this.state.taggingData.length - 1) + " Images"}</p>
+        
+        <CSVLink data={this.state.taggingData} style={{display: (!this.state.tagging && this.state.taggingData.length > 1) ? "block" : "none"}}>Download me</CSVLink>
+        
+        
       </div>
     );
   }
-
+  //Sets choosen file to state
   handleFileChange(file) {
     this.setState({file: file});
   }
@@ -42,16 +43,29 @@ class App extends Component {
     console.log(error);
   }
 
+  //Handles calling of tagging Api
   handleTagImages() {
-    let urls = this.state.file.slice(1, 6)
-    for (let i = 0; i < Math.ceil(urls.length / 5); i++) {
-      tagImages(urls.slice(i, i + 5), this.handleTaggingResponse.bind(this));
+    //Sets state to show tagging is in process
+    this.setState({tagging: true});
+
+    let urlsPerCall = 128;
+    let urls = this.state.file.slice(1, 1500)
+    let lastCall = false;
+
+    //Loops through urls and calls api for each increment
+    for (let i = 0; i < Math.ceil(urls.length / urlsPerCall); i++) {
+      //Checks if it is the last call to be made
+      if ((i + 1) * urlsPerCall > urls.length) {
+        lastCall = true;
+      }
+      //Sends url to ImageTagger to be sent to the api
+      tagImages(urls.slice(i * urlsPerCall, (i * urlsPerCall) + urlsPerCall), this.handleTaggingResponse.bind(this), lastCall);
     }
   }
 
-  handleTaggingResponse(data) {
-    this.setState({taggingData: this.state.taggingData.concat(data)})
-    console.log(this.state);
+  //Success callback with tagged data
+  handleTaggingResponse(data, lastCall) {
+    this.setState({taggingData: this.state.taggingData.concat(data), tagging: !lastCall})
   }
 }
 
