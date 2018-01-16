@@ -6,7 +6,9 @@
     "react-scripts": "1.1.0"
   },
   "dependencies": {
+    "clarifai": "^2.5.0",
     "react": "^16.2.0",
+    "react-csv": "^1.0.10",
     "react-csv-reader": "^0.2.1",
     "react-dom": "^16.2.0"
   },
